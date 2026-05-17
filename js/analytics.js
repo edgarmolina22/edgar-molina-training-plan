@@ -978,6 +978,11 @@ function setAnalyticsPage(page, btn) {
   applyFilters();
   renderRacePredictor();
   if(typeof Chart!=='undefined') renderAnalytics();
+
+  // Best Efforts card (DB-backed, running + cycling pages only).
+  // Defined in js/db.js — present whenever serve.py is up.
+  if (page === 'running' && typeof renderBestEfforts === 'function') renderBestEfforts('Running');
+  if (page === 'cycling' && typeof renderBestEfforts === 'function') renderBestEfforts('Cycling');
 }
 
 function setView(v, btn){

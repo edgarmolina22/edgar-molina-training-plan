@@ -330,6 +330,26 @@ CREATE TABLE IF NOT EXISTS file_meta (
     local_timestamp     TEXT
 );
 
+-- Best efforts: per-activity records of "best <effort_type>" achievements.
+-- effort_type examples:
+--   Running:  '400m', '800m', '1K', '1mi', '2mi', '5K', '10K', '15K',
+--             '10mi', '20K', 'half_marathon', '30K', 'marathon',
+--             'longest_run', 'most_elevation', 'biggest_climb',
+--             'most_aerobic_te', 'best_cadence_1mi'
+--   Cycling:  '5mi', '10K', '10mi', '20K', '30K', '40K',
+--             'longest_ride', 'biggest_climb', 'most_elevation_ride',
+--             'pwr_1s', 'pwr_5s', 'pwr_10s', 'pwr_30s', 'pwr_60s',
+--             'pwr_300s', 'pwr_600s', 'pwr_1200s',
+--             'most_tss', 'highest_np'
+-- effort_value: lower-is-better for time PRs (unit='sec'); higher-is-better otherwise.
+CREATE TABLE IF NOT EXISTS best_efforts (
+    activity_id   INTEGER NOT NULL REFERENCES activities(id) ON DELETE CASCADE,
+    effort_type   TEXT NOT NULL,
+    effort_value  REAL NOT NULL,
+    unit          TEXT NOT NULL,
+    PRIMARY KEY (activity_id, effort_type)
+);
+
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_activities_date       ON activities(activity_date);
 CREATE INDEX IF NOT EXISTS idx_activities_type       ON activities(activity_type);
@@ -344,6 +364,8 @@ CREATE INDEX IF NOT EXISTS idx_events_activity       ON events(activity_id);
 CREATE INDEX IF NOT EXISTS idx_events_type           ON events(event);
 CREATE INDEX IF NOT EXISTS idx_workout_steps_activity ON workout_steps(activity_id);
 CREATE INDEX IF NOT EXISTS idx_device_info_activity  ON device_info(activity_id);
+CREATE INDEX IF NOT EXISTS idx_best_efforts_type     ON best_efforts(effort_type);
+CREATE INDEX IF NOT EXISTS idx_best_efforts_activity ON best_efforts(activity_id);
 
 -- Views
 CREATE VIEW IF NOT EXISTS v_weekly_mileage AS

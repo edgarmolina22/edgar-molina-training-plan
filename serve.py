@@ -680,6 +680,77 @@ def api_form_drift():
         return jsonify({'drift': [], 'error': str(e)})
 
 
+# Display order for the Best Efforts card. Lower-is-better (time PRs) first,
+# then higher-is-better single-activity efforts. Keys here MUST match
+# effort_type strings written by import_fit.py.
+BEST_EFFORTS_ORDER = {
+    'Running': [
+        ('400m', 'sec'), ('800m', 'sec'), ('1K', 'sec'), ('1mi', 'sec'),
+        ('2mi', 'sec'), ('5K', 'sec'), ('10K', 'sec'), ('15K', 'sec'),
+        ('10mi', 'sec'), ('20K', 'sec'), ('half_marathon', 'sec'),
+        ('30K', 'sec'), ('marathon', 'sec'),
+        ('longest_run', 'mi'), ('most_elevation_run', 'ft'),
+        ('biggest_climb', 'ft'), ('most_aerobic_te', 'te'),
+    ],
+    'Cycling': [
+        ('5mi', 'sec'), ('10K', 'sec'), ('10mi', 'sec'),
+        ('20K', 'sec'), ('30K', 'sec'), ('40K', 'sec'),
+        ('longest_ride', 'mi'), ('most_elevation_ride', 'ft'),
+        ('biggest_climb', 'ft'),
+        ('pwr_1s', 'w'), ('pwr_5s', 'w'), ('pwr_10s', 'w'),
+        ('pwr_30s', 'w'), ('pwr_60s', 'w'), ('pwr_300s', 'w'),
+        ('pwr_600s', 'w'), ('pwr_1200s', 'w'),
+        ('highest_np', 'w'), ('most_tss', 'tss'),
+    ],
+}
+
+
+@app.route('/api/best_efforts')
+def api_best_efforts():
+    """Best per effort_type across all activities of a given type.
+
+    Query params:
+      - type=Running  → returns running PRs (default)
+      - type=Cycling  → returns cycling PRs (matches Road / Virtual / Indoor)
+
+    For each effort, the response includes the value, activity date+title, and
+    the activity's garmin_id so the frontend can open the detail modal.
+    """
+    atype = request.args.get('type', 'Running')
+    type_clause = (
+        "a.activity_type='Running'" if 'unning' in atype
+        else "a.activity_type IN ('Road Cycling','Virtual Cycling','Indoor Cycling')"
+    )
+    canonical_key = 'Running' if 'unning' in atype else 'Cycling'
+
+    try:
+        rows = q(f"""
+            WITH ranked AS (
+                SELECT b.effort_type, b.effort_value, b.unit,
+                       a.id, a.activity_date, a.title,
+                       a.garmin_activity_id,
+                       ROW_NUMBER() OVER (
+                         PARTITION BY b.effort_type
+                         ORDER BY (CASE WHEN b.unit='sec' THEN b.effort_value ELSE -b.effort_value END)
+                       ) AS rk
+                FROM best_efforts b
+                JOIN activities a ON a.id = b.activity_id
+                WHERE {type_clause}
+            )
+            SELECT effort_type, effort_value, unit, id AS activity_id,
+                   activity_date, title, garmin_activity_id AS garmin_id
+            FROM ranked WHERE rk = 1
+        """)
+
+        # Return in display order so the frontend doesn't have to sort
+        order = BEST_EFFORTS_ORDER.get(canonical_key, [])
+        order_idx = {k: i for i, (k, _) in enumerate(order)}
+        rows.sort(key=lambda r: order_idx.get(r['effort_type'], 999))
+        return jsonify({'efforts': rows})
+    except Exception as e:
+        return jsonify({'efforts': [], 'error': str(e)})
+
+
 @app.route('/api/route')
 def api_route():
     """GPS route with HR/pace for a specific activity. Returns ~300 thinned points."""

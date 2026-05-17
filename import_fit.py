@@ -461,6 +461,123 @@ def parse_fit(path: Path) -> dict | None:
     }
 
 
+# ════════════════════════════════════════════════════════════════════
+# BEST EFFORTS — fastest rolling-window times + single-activity PRs
+# ════════════════════════════════════════════════════════════════════
+
+# Target distances (miles) for rolling-window time PRs
+RUN_DISTANCES_MI = {
+    '400m':          400 / 1609.344,
+    '800m':          800 / 1609.344,
+    '1K':            1000 / 1609.344,
+    '1mi':           1.0,
+    '2mi':           2.0,
+    '5K':            5000 / 1609.344,
+    '10K':           10000 / 1609.344,
+    '15K':           15000 / 1609.344,
+    '10mi':          10.0,
+    '20K':           20000 / 1609.344,
+    'half_marathon': 21097.5 / 1609.344,
+    '30K':           30000 / 1609.344,
+    'marathon':      42195 / 1609.344,
+}
+CYC_DISTANCES_MI = {
+    '5mi':  5.0,
+    '10K':  10000 / 1609.344,
+    '10mi': 10.0,
+    '20K':  20000 / 1609.344,
+    '30K':  30000 / 1609.344,
+    '40K':  40000 / 1609.344,
+}
+
+# Indices into the records_out tuple (matches the INSERT INTO records column order)
+_R_ELAPSED = 1
+_R_ALT     = 4
+_R_DIST    = 5
+
+
+def fastest_for_distance(records_out, target_mi):
+    """Two-pointer sweep for fastest time to cover target_mi. Returns seconds or None."""
+    pts = [(r[_R_ELAPSED], r[_R_DIST]) for r in records_out
+           if r[_R_ELAPSED] is not None and r[_R_DIST] is not None]
+    n = len(pts)
+    if n < 2 or pts[-1][1] < target_mi:
+        return None
+    best = None
+    j = 0
+    for i in range(n):
+        while j < n and pts[j][1] - pts[i][1] < target_mi:
+            j += 1
+        if j >= n:
+            break
+        # Linear interpolation across the last segment for sub-second precision.
+        if j > 0 and pts[j][1] > pts[j-1][1]:
+            target = pts[i][1] + target_mi
+            frac = (target - pts[j-1][1]) / (pts[j][1] - pts[j-1][1])
+            elapsed_at_target = pts[j-1][0] + frac * (pts[j][0] - pts[j-1][0])
+            elapsed = elapsed_at_target - pts[i][0]
+        else:
+            elapsed = pts[j][0] - pts[i][0]
+        if best is None or elapsed < best:
+            best = elapsed
+    return best
+
+
+def biggest_climb_ft(records_out):
+    """Max altitude excursion above any preceding running-minimum."""
+    min_alt, biggest = None, 0.0
+    for r in records_out:
+        alt = r[_R_ALT]
+        if alt is None:
+            continue
+        if min_alt is None or alt < min_alt:
+            min_alt = alt
+        gain = alt - min_alt
+        if gain > biggest:
+            biggest = gain
+    return round(biggest, 1) if biggest > 0 else None
+
+
+def build_best_efforts(records_out, is_run, act_row, stream):
+    """Return list of (effort_type, effort_value, unit) tuples for this activity."""
+    out = []
+
+    # Rolling-window distance PRs (time in seconds, lower is better)
+    distances = RUN_DISTANCES_MI if is_run else CYC_DISTANCES_MI
+    for label, target_mi in distances.items():
+        t = fastest_for_distance(records_out, target_mi)
+        if t is not None:
+            out.append((label, round(t, 2), 'sec'))
+
+    # Single-activity "biggest of …" efforts (higher is better)
+    dist_mi  = act_row.get('distance_mi')
+    ascent   = act_row.get('ascent_ft')
+    if is_run:
+        if dist_mi: out.append(('longest_run',        dist_mi, 'mi'))
+        if ascent:  out.append(('most_elevation_run', ascent,  'ft'))
+        if act_row.get('aerobic_te'):
+            out.append(('most_aerobic_te', act_row['aerobic_te'], 'te'))
+    else:
+        if dist_mi: out.append(('longest_ride',         dist_mi, 'mi'))
+        if ascent:  out.append(('most_elevation_ride', ascent,  'ft'))
+        # Power PRs already computed in stream_summary — duplicate them here for
+        # a unified query surface.
+        pc = stream.get('power_curve', {})
+        for k in ('1s', '5s', '10s', '30s', '60s', '300s', '600s', '1200s'):
+            if pc.get(k):
+                out.append((f'pwr_{k}', pc[k], 'w'))
+        if act_row.get('training_stress_score'):
+            out.append(('most_tss',    act_row['training_stress_score'], 'tss'))
+        if act_row.get('norm_power_w'):
+            out.append(('highest_np',  act_row['norm_power_w'],          'w'))
+
+    bc = biggest_climb_ft(records_out)
+    if bc and bc > 50:   # ignore GPS noise
+        out.append(('biggest_climb', bc, 'ft'))
+
+    return out
+
+
 def build_stream(records, is_run):
     if not records: return {}
 
@@ -567,6 +684,16 @@ def insert(conn, data, force=False):
         fv('vertical_oscillation','last'),fv('power','last'),
         fv('heart_rate','delta'),fv('stance_time','delta'),fv('stance_time_balance','delta'),
         fv('vertical_oscillation','delta'),fv('power','delta')))
+
+    # best_efforts — per-activity time PRs + single-activity "biggest of …" rows.
+    # INSERT OR REPLACE so re-imports stay clean.
+    is_run = 'unning' in (a.get('activity_type') or '')
+    efforts = build_best_efforts(data['records'], is_run, a, data['stream'])
+    if efforts:
+        conn.executemany(
+            "INSERT OR REPLACE INTO best_efforts (activity_id, effort_type, effort_value, unit) VALUES (?,?,?,?)",
+            [(aid,) + e for e in efforts]
+        )
 
     # hrv
     if data['hrv']:

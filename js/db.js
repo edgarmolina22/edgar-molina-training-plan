@@ -462,6 +462,90 @@ window.openActivityDetail = function(date, title, actType, dist, garminId) {
   openActModal(date, title, actType, dist, garminId);
 };
 
+// ── Best Efforts card ────────────────────────────────────────────────
+// Pretty labels + value formatters keyed by effort_type. Anything not in this
+// map falls back to a humanized form of the raw key.
+const EFFORT_LABELS = {
+  '400m':'400m', '800m':'1/2 mile', '1K':'1 km', '1mi':'1 mile', '2mi':'2 mile',
+  '5K':'5K', '10K':'10K', '15K':'15K', '10mi':'10 mile', '20K':'20K',
+  'half_marathon':'Half-Marathon', '30K':'30K', 'marathon':'Marathon',
+  '5mi':'5 mile', '40K':'40K',
+  'longest_run':'Longest Run', 'longest_ride':'Longest Ride',
+  'most_elevation_run':'Most Elevation', 'most_elevation_ride':'Elevation Gain',
+  'biggest_climb':'Biggest Climb', 'most_aerobic_te':'Best Aerobic TE',
+  'pwr_1s':'Best 1s Power', 'pwr_5s':'Best 5s Power', 'pwr_10s':'Best 10s Power',
+  'pwr_30s':'Best 30s Power', 'pwr_60s':'Best 1min Power', 'pwr_300s':'Best 5min Power',
+  'pwr_600s':'Best 10min Power', 'pwr_1200s':'Best 20min Power',
+  'most_tss':'Biggest TSS', 'highest_np':'Highest NP',
+};
+
+function fmtEffortValue(value, unit) {
+  if (unit === 'sec') {
+    const s = Math.round(value);
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    return h ? `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`
+             : `${m}:${String(sec).padStart(2,'0')}`;
+  }
+  if (unit === 'mi')  return `${value.toFixed(2)} mi`;
+  if (unit === 'ft')  return `${Math.round(value).toLocaleString()} ft`;
+  if (unit === 'w')   return `${Math.round(value)} w`;
+  if (unit === 'tss') return value.toFixed(1);
+  if (unit === 'te')  return value.toFixed(1);
+  return String(value);
+}
+
+function fmtEffortDate(iso) {
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-');
+  return `${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(m,10)-1]} ${parseInt(d,10)}, ${y}`;
+}
+
+async function renderBestEfforts(type) {
+  // type: 'Running' | 'Cycling'
+  const containerId = type === 'Running' ? 'bestEffortsRun' : 'bestEffortsCycle';
+  const el = document.getElementById(containerId);
+  if (!el) return;
+
+  if (!_dbConnected) {
+    el.innerHTML = '<div class="best-effort-empty">DB offline — start <code>python serve.py</code> to see PRs.</div>';
+    return;
+  }
+
+  try {
+    const r = await fetch(`${DB_BASE}/api/best_efforts?type=${encodeURIComponent(type)}`);
+    const d = await r.json();
+    const rows = d.efforts || [];
+    if (!rows.length) {
+      el.innerHTML = '<div class="best-effort-empty">No best efforts yet.</div>';
+      return;
+    }
+    el.innerHTML = '<div class="best-efforts-list">' + rows.map(e => {
+      const label = EFFORT_LABELS[e.effort_type] || e.effort_type;
+      const value = fmtEffortValue(e.effort_value, e.unit);
+      const date  = fmtEffortDate(e.activity_date);
+      const title = (e.title || '').replace(/"/g, '&quot;');
+      // Each row clickable → opens activity detail modal via the dispatcher
+      return `<div class="best-effort-row"
+                   data-action="open-activity-detail"
+                   data-garmin-id="${e.garmin_id || ''}"
+                   data-date="${e.activity_date || ''}"
+                   data-title="${title}"
+                   data-type="${type}"
+                   data-distance=""
+                   title="${title}">
+        <span class="best-effort-label">${label}</span>
+        <span class="best-effort-value">${value}</span>
+        <span class="best-effort-date">${date}</span>
+      </div>`;
+    }).join('') + '</div>';
+  } catch (e) {
+    el.innerHTML = `<div class="best-effort-empty">Error loading PRs: ${e.message}</div>`;
+  }
+}
+window.renderBestEfforts = renderBestEfforts;
+
 // ── Keyboard close ───────────────────────────────────────────────────
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeActModal();

@@ -24,6 +24,14 @@ import sys
 import time
 import zipfile
 from datetime import datetime
+from zoneinfo import ZoneInfo
+
+# Storage timezone: every FIT timestamp from Garmin is UTC. Convert to this zone
+# before writing activity_date/activity_datetime so the local calendar date
+# matches what the user actually trained — otherwise a Friday-evening ride in
+# Pacific time gets recorded as Saturday's UTC date and lands on the wrong day
+# in the plan view, HR-zone lookups, etc.
+LOCAL_TZ = ZoneInfo('America/Los_Angeles')
 from pathlib import Path
 
 try:
@@ -111,11 +119,15 @@ def parse_fit(path: Path) -> dict | None:
     is_cycle = 'cycling' in sport
     if not is_run and not is_cycle: return None
 
-    # Date / title
+    # Date / title — converted to LOCAL time so the calendar date reflects when
+    # the user actually trained (FIT files store start_time in UTC).
     start_ts = sess.get('start_time') or sess.get('timestamp')
     if isinstance(start_ts, datetime):
-        date_str  = start_ts.strftime('%Y-%m-%dT%H:%M:%S.000')
-        date_only = start_ts.strftime('%Y-%m-%d')
+        # If the datetime is naive, assume UTC (FIT spec default).
+        utc_ts    = start_ts if start_ts.tzinfo else start_ts.replace(tzinfo=ZoneInfo('UTC'))
+        local_ts  = utc_ts.astimezone(LOCAL_TZ)
+        date_str  = local_ts.strftime('%Y-%m-%dT%H:%M:%S')
+        date_only = local_ts.strftime('%Y-%m-%d')
     else:
         date_str = str(start_ts); date_only = str(start_ts)[:10]
 

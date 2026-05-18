@@ -145,6 +145,7 @@ body{font-family:var(--mono);background:var(--bg);color:var(--text);font-size:13
 .ex-bullet{width:13px;height:13px;border-radius:50%;background:var(--strength-bg);border:1px solid #b8d9cc;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;font-size:7px;color:var(--strength);font-weight:500;}
 .race-banner{margin:0 14px 10px;padding:7px 10px;background:var(--race-bg);border-left:3px solid var(--race);border-radius:0 4px 4px 0;font-size:10px;color:var(--race);font-family:var(--mono);}
 .itb-banner{margin:0 14px 10px;padding:7px 10px;background:var(--strength-bg);border-left:3px solid var(--strength);border-radius:0 4px 4px 0;font-size:10px;color:var(--strength);font-family:var(--mono);}
+.optional-banner{margin:0 14px 10px;padding:7px 10px;background:var(--cycle-bg);border-left:3px solid var(--cycle);border-radius:0 4px 4px 0;font-size:10px;color:var(--cycle);font-family:var(--mono);}
 .week-note{padding:8px 14px;font-size:10px;color:var(--text2);background:var(--warn-bg);border-top:1px solid #f0dcc8;font-style:italic;}
 
 /* ══════════════════════════════
@@ -495,6 +496,25 @@ body{font-family:var(--mono);background:var(--bg);color:var(--text);font-size:13
 .map-legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;}
 .map-leg-item{display:flex;align-items:center;gap:5px;font-size:9px;color:var(--text3);}
 .map-leg-dot{width:10px;height:4px;border-radius:2px;flex-shrink:0;}
+
+/* ══ Collapsible analytics sections ══ */
+.an-section{background:var(--surface);}
+.an-section-header{display:flex;align-items:center;gap:10px;padding:9px 40px;background:var(--surface2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);cursor:pointer;user-select:none;transition:background 0.12s;}
+.an-section-header:hover{background:#ebe8e2;}
+.an-section-header.collapsed{border-bottom:none;}
+.an-section-chevron{font-size:9px;color:var(--text);transition:transform 0.18s;flex-shrink:0;width:10px;text-align:center;font-family:var(--mono);}
+.an-section-header.collapsed .an-section-chevron{transform:rotate(-90deg);}
+.an-section-label{font-size:10px;letter-spacing:0.1em;text-transform:uppercase;font-weight:500;color:var(--text);}
+.an-section-count{font-size:9px;color:var(--text3);font-family:var(--mono);}
+.an-section-kpi{margin-left:auto;font-size:9px;color:var(--text3);font-family:var(--mono);display:none;letter-spacing:0.03em;}
+.an-section-header.collapsed .an-section-kpi{display:inline;}
+.an-section-body{padding:14px 40px;background:var(--surface);}
+.an-section-body.collapsed{display:none;}
+@media(max-width:800px){
+  .an-section-header{padding-left:16px;padding-right:16px;}
+  .an-section-body{padding-left:16px;padding-right:16px;}
+  .an-section-kpi{display:none !important;}
+}
 
 /* ══ Best Efforts card ══ */
 .best-efforts-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:0;}

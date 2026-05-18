@@ -928,6 +928,8 @@ function applyFilters(){
 
   updateChartVisibility();
   renderAnalytics();
+  // Section KPIs depend on filteredRuns/filteredCycles — refresh them too.
+  if (typeof updateSectionKPIs === 'function') updateSectionKPIs();
 }
 
 function updateChartVisibility(){
@@ -945,6 +947,114 @@ function updateChartVisibility(){
 // ANALYTICS PAGE SWITCHING
 // ════════════════════════════════════════
 let analyticsPage = 'overview';
+
+// ════════════════════════════════════════
+// COLLAPSIBLE ANALYTICS SECTIONS
+// ════════════════════════════════════════
+// Default open/closed for each section (false = closed). User toggles persist
+// to localStorage so they don't have to re-collapse on every visit.
+const SECTION_DEFAULTS = {
+  'run-pace-volume': true,
+  'run-cardio':      true,
+  'run-form':        false,  // diagnostic — hidden until needed
+  'run-prs':         true,
+  'cyc-pace-volume': true,
+  'cyc-power':       true,
+  'cyc-cardio':      true,
+  'cyc-prs':         true,
+};
+
+function _sectionStorageKey(key) { return 'emt:section:' + key; }
+
+function isSectionOpen(key) {
+  let saved = null;
+  try { saved = localStorage.getItem(_sectionStorageKey(key)); } catch {}
+  if (saved === '1') return true;
+  if (saved === '0') return false;
+  return !!SECTION_DEFAULTS[key];
+}
+
+function toggleSection(key, headerEl) {
+  const body = document.getElementById('an-body-' + key);
+  if (!body || !headerEl) return;
+  const willCollapse = !headerEl.classList.contains('collapsed');
+  headerEl.classList.toggle('collapsed', willCollapse);
+  body.classList.toggle('collapsed', willCollapse);
+  try { localStorage.setItem(_sectionStorageKey(key), willCollapse ? '0' : '1'); } catch {}
+  // If we just expanded a section, charts inside it may need to (re)render —
+  // they were skipped earlier or sized to 0 while hidden. renderAnalytics is
+  // idempotent (destroys + recreates).
+  if (!willCollapse && typeof renderAnalytics === 'function' && typeof Chart !== 'undefined') {
+    renderAnalytics();
+  }
+}
+
+function applySectionStates() {
+  Object.keys(SECTION_DEFAULTS).forEach(key => {
+    const header = document.querySelector(`[data-section-key="${key}"]`);
+    const body   = document.getElementById('an-body-' + key);
+    if (!header || !body) return;
+    const open = isSectionOpen(key);
+    header.classList.toggle('collapsed', !open);
+    body.classList.toggle('collapsed', !open);
+  });
+}
+
+// ── KPI summaries shown inline when a section is collapsed ─────────────
+// Each function returns a short string like "9:32/mi · 152 bpm · 762 mi"
+// suitable for an at-a-glance summary in the section header.
+function _fmtPace(sec) {
+  if (!sec || sec <= 0) return '—';
+  return `${Math.floor(sec/60)}:${String(sec%60).padStart(2,'0')}/mi`;
+}
+function _fmtTime(sec) {
+  if (!sec) return '—';
+  const s = Math.round(sec), h = Math.floor(s/3600), m = Math.floor((s%3600)/60), ss = s%60;
+  return h ? `${h}:${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}` : `${m}:${String(ss).padStart(2,'0')}`;
+}
+function _latest(arr) {
+  if (!arr || !arr.length) return null;
+  return [...arr].sort((a,b)=> new Date(b.Date||b.date) - new Date(a.Date||a.date))[0];
+}
+function _sum(arr, fn) { return arr.reduce((s,x)=>s+(fn(x)||0), 0); }
+function _avg(arr, fn) {
+  const v = arr.map(fn).filter(x => x && x > 0);
+  return v.length ? v.reduce((a,b)=>a+b, 0)/v.length : null;
+}
+
+function _runningKPIs() {
+  const list = (typeof filteredRuns !== 'undefined' && filteredRuns?.length) ? filteredRuns : analyticsRuns || [];
+  const r = _latest(list);
+  return {
+    'run-pace-volume': r
+      ? `latest ${_fmtPace(r.pace_sec)} · ${(r.Distance||0).toFixed(2)} mi · ${list.length} runs`
+      : 'no runs',
+    'run-cardio':      r ? `latest avg HR ${r.hr || '—'} bpm` : '',
+    'run-form':        r && r.cadence ? `cadence ${r.cadence} spm · left ${r.left_pct?.toFixed?.(1) || '—'}%` : 'click to expand',
+    'run-prs':         'click to expand',
+  };
+}
+
+function _cyclingKPIs() {
+  const list = (typeof filteredCycles !== 'undefined' && filteredCycles?.length) ? filteredCycles : analyticsCycles || [];
+  const r = _latest(list);
+  return {
+    'cyc-pace-volume': r
+      ? `latest ${(r.avg_speed||0).toFixed(1)} mph · ${(r.Distance||0).toFixed(1)} mi · ${list.length} rides`
+      : 'no rides',
+    'cyc-power':       r && r.avg_power ? `latest avg ${r.avg_power}w · max ${r.max_power||'—'}w` : 'click to expand',
+    'cyc-cardio':      r ? `latest avg HR ${r.hr || '—'} bpm` : '',
+    'cyc-prs':         'click to expand',
+  };
+}
+
+function updateSectionKPIs() {
+  const all = { ..._runningKPIs(), ..._cyclingKPIs() };
+  Object.entries(all).forEach(([key, text]) => {
+    const el = document.getElementById('an-kpi-' + key);
+    if (el) el.textContent = text;
+  });
+}
 
 function setAnalyticsPage(page, btn) {
   analyticsPage = page;
@@ -983,6 +1093,10 @@ function setAnalyticsPage(page, btn) {
   // Defined in js/db.js — present whenever serve.py is up.
   if (page === 'running' && typeof renderBestEfforts === 'function') renderBestEfforts('Running');
   if (page === 'cycling' && typeof renderBestEfforts === 'function') renderBestEfforts('Cycling');
+
+  // Collapsible section states (open/closed from localStorage) + KPI summaries.
+  applySectionStates();
+  updateSectionKPIs();
 }
 
 function setView(v, btn){
@@ -1242,6 +1356,12 @@ function renderTable(){
       <th></th>`;
   }
 
+  // Re-apply sort-direction class to the active column so the ↑/↓ arrow
+  // survives the innerHTML rebuild above.
+  thead.querySelectorAll('th').forEach(th => {
+    if (th.dataset.key === tableSortKey) th.classList.add('sort-' + tableSortDir);
+  });
+
   // Data source
   const data = isCycleView ? [...filteredCycles]
              : isRunView   ? [...filteredRuns]
@@ -1325,11 +1445,14 @@ function sortTable(key){
   if(tableSortKey===key) tableSortDir = tableSortDir==='asc'?'desc':'asc';
   else { tableSortKey=key; tableSortDir='desc'; }
   document.querySelectorAll('.runs-table th').forEach(th=>th.classList.remove('sort-asc','sort-desc'));
-  // Highlight the matching th by its data-key
   document.querySelectorAll('.runs-table th').forEach(th=>{
     if(th.dataset.key===key) th.classList.add('sort-'+tableSortDir);
   });
-  renderTable();
+  // Re-render whichever log is visible. Previously always called renderTable()
+  // even on the Cycling page → cycle table never updated when its headers
+  // were clicked.
+  if (analyticsPage === 'cycling') renderCycleTable();
+  else renderTable();
 }
 
 function renderStats(){
@@ -2379,6 +2502,10 @@ function renderCycleTable(){
     <th data-action="sort-table" data-key="cadence">Cadence</th>
     <th data-action="sort-table" data-key="aerobic_te">Aerobic TE</th>
     <th></th>`;
+  // Restore the ↑/↓ arrow on the active sort column (innerHTML rebuild wipes it).
+  thead.querySelectorAll('th').forEach(th => {
+    if (th.dataset.key === tableSortKey) th.classList.add('sort-' + tableSortDir);
+  });
   const searchQ=(document.getElementById('rideLogSearch')?.value||'').toLowerCase().trim();
   const sorted=[...filteredCycles].filter(r=>!searchQ||((r.Title||r.title||'').toLowerCase().includes(searchQ))).sort((a,b)=>{
     const v=r=>{

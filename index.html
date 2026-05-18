@@ -207,62 +207,109 @@
     <div class="stat-strip" id="statStripRun"></div>
     <div id="racePredictorRun"></div>
     <div id="lastRunSnapshot"></div>
-    <div class="charts-grid">
-      <div class="chart-card chart-full">
-        <div class="chart-card-header"><span class="chart-card-title">Pace over time</span><span class="chart-card-sub">min/mi · 5-run rolling avg · races &amp; IT band flares marked</span></div>
-        <div class="chart-card-body" style="padding-bottom:18px;"><canvas id="paceChart"></canvas></div>
+    <!-- ── Section: Pace & Volume ── -->
+    <div class="an-section">
+      <div class="an-section-header" data-action="toggle-section" data-section-key="run-pace-volume">
+        <span class="an-section-chevron">▼</span>
+        <span class="an-section-label">Pace &amp; Volume</span>
+        <span class="an-section-count">3 charts</span>
+        <span class="an-section-kpi" id="an-kpi-run-pace-volume"></span>
       </div>
-      <div class="chart-card">
-        <div class="chart-card-header"><span class="chart-card-title">Pace progression</span><span class="chart-card-sub">4-week rolling avg · easy runs ≥3mi · excludes races</span></div>
-        <div class="chart-card-body"><canvas id="paceProgressChart"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-card-header"><span class="chart-card-title">HR vs pace</span><span class="chart-card-sub">aerobic efficiency · dot size = distance</span></div>
-        <div class="chart-card-body"><canvas id="hrPaceChart"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-card-header"><span class="chart-card-title">Aerobic efficiency trend</span><span class="chart-card-sub">EF = speed ÷ HR × 100 · 6-run rolling avg</span></div>
-        <div class="chart-card-body"><canvas id="aeroEffChart"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-card-header"><span class="chart-card-title">Cadence</span><span class="chart-card-sub">spm · target ≥175</span></div>
-        <div class="chart-card-body"><canvas id="cadenceChart"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-card-header"><span class="chart-card-title">Left GCT balance</span><span class="chart-card-sub">% · target 50% · risk below 47.5%</span></div>
-        <div class="chart-card-body"><canvas id="gctChart"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-card-header"><span class="chart-card-title">Ground contact time</span><span class="chart-card-sub">ms · lower = better elastic return · colored by run type</span></div>
-        <div class="chart-card-body"><canvas id="gctMsChart"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-card-header"><span class="chart-card-title">Stride length</span><span class="chart-card-sub">meters per stride · longer = more efficient · 51% coverage</span></div>
-        <div class="chart-card-body"><canvas id="strideLenChart"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-card-header"><span class="chart-card-title">Long run progression</span><span class="chart-card-sub">all runs ≥8mi · monthly peak highlighted</span></div>
-        <div class="chart-card-body"><canvas id="longRunChart"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-card-header"><span class="chart-card-title">Vertical ratio</span><span class="chart-card-sub">vert osc ÷ stride length · target &lt;8% · 51% coverage</span></div>
-        <div class="chart-card-body"><canvas id="vertRatioChart"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-card-header"><span class="chart-card-title">Vertical oscillation</span><span class="chart-card-sub">cm · colored by run type</span></div>
-        <div class="chart-card-body"><canvas id="voChart"></canvas></div>
-      </div>
-      <div class="chart-card chart-full" id="powerCurveCard" style="display:none;">
-        <div class="chart-card-header"><span class="chart-card-title">Running power curve PRs</span><span class="chart-card-sub">best avg watts per duration · all-time records · requires local server</span></div>
-        <div class="chart-card-body"><canvas id="powerCurveChart"></canvas></div>
+      <div class="an-section-body" id="an-body-run-pace-volume">
+        <div class="charts-grid">
+          <div class="chart-card chart-full">
+            <div class="chart-card-header"><span class="chart-card-title">Pace over time</span><span class="chart-card-sub">min/mi · 5-run rolling avg · races &amp; IT band flares marked</span></div>
+            <div class="chart-card-body" style="padding-bottom:18px;"><canvas id="paceChart"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-header"><span class="chart-card-title">Pace progression</span><span class="chart-card-sub">4-week rolling avg · easy runs ≥3mi · excludes races</span></div>
+            <div class="chart-card-body"><canvas id="paceProgressChart"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-header"><span class="chart-card-title">Long run progression</span><span class="chart-card-sub">all runs ≥8mi · monthly peak highlighted</span></div>
+            <div class="chart-card-body"><canvas id="longRunChart"></canvas></div>
+          </div>
+        </div>
       </div>
     </div>
-    <div class="table-card" id="bestEffortsRunCard">
-      <div class="table-header">
-        <span class="chart-card-title">Best Efforts</span>
-        <span class="chart-card-sub">all-time PRs · requires local server</span>
+
+    <!-- ── Section: Cardio ── -->
+    <div class="an-section">
+      <div class="an-section-header" data-action="toggle-section" data-section-key="run-cardio">
+        <span class="an-section-chevron">▼</span>
+        <span class="an-section-label">Cardio</span>
+        <span class="an-section-count">3 charts</span>
+        <span class="an-section-kpi" id="an-kpi-run-cardio"></span>
       </div>
-      <div id="bestEffortsRun"><div class="no-db-msg">Loading…</div></div>
+      <div class="an-section-body" id="an-body-run-cardio">
+        <div class="charts-grid">
+          <div class="chart-card">
+            <div class="chart-card-header"><span class="chart-card-title">HR vs pace</span><span class="chart-card-sub">aerobic efficiency · dot size = distance</span></div>
+            <div class="chart-card-body"><canvas id="hrPaceChart"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-header"><span class="chart-card-title">Aerobic efficiency trend</span><span class="chart-card-sub">EF = speed ÷ HR × 100 · 6-run rolling avg</span></div>
+            <div class="chart-card-body"><canvas id="aeroEffChart"></canvas></div>
+          </div>
+          <div class="chart-card chart-full" id="powerCurveCard" style="display:none;">
+            <div class="chart-card-header"><span class="chart-card-title">Running power curve PRs</span><span class="chart-card-sub">best avg watts per duration · all-time records · requires local server</span></div>
+            <div class="chart-card-body"><canvas id="powerCurveChart"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Section: Form (collapsed by default) ── -->
+    <div class="an-section">
+      <div class="an-section-header" data-action="toggle-section" data-section-key="run-form">
+        <span class="an-section-chevron">▼</span>
+        <span class="an-section-label">Form</span>
+        <span class="an-section-count">6 charts</span>
+        <span class="an-section-kpi" id="an-kpi-run-form"></span>
+      </div>
+      <div class="an-section-body" id="an-body-run-form">
+        <div class="charts-grid">
+          <div class="chart-card">
+            <div class="chart-card-header"><span class="chart-card-title">Cadence</span><span class="chart-card-sub">spm · target ≥175</span></div>
+            <div class="chart-card-body"><canvas id="cadenceChart"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-header"><span class="chart-card-title">Left GCT balance</span><span class="chart-card-sub">% · target 50% · risk below 47.5%</span></div>
+            <div class="chart-card-body"><canvas id="gctChart"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-header"><span class="chart-card-title">Ground contact time</span><span class="chart-card-sub">ms · lower = better elastic return · colored by run type</span></div>
+            <div class="chart-card-body"><canvas id="gctMsChart"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-header"><span class="chart-card-title">Stride length</span><span class="chart-card-sub">meters per stride · longer = more efficient · 51% coverage</span></div>
+            <div class="chart-card-body"><canvas id="strideLenChart"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-header"><span class="chart-card-title">Vertical ratio</span><span class="chart-card-sub">vert osc ÷ stride length · target &lt;8% · 51% coverage</span></div>
+            <div class="chart-card-body"><canvas id="vertRatioChart"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-header"><span class="chart-card-title">Vertical oscillation</span><span class="chart-card-sub">cm · colored by run type</span></div>
+            <div class="chart-card-body"><canvas id="voChart"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Section: Personal Records ── -->
+    <div class="an-section">
+      <div class="an-section-header" data-action="toggle-section" data-section-key="run-prs">
+        <span class="an-section-chevron">▼</span>
+        <span class="an-section-label">Personal Records</span>
+        <span class="an-section-count">all-time PRs</span>
+        <span class="an-section-kpi" id="an-kpi-run-prs"></span>
+      </div>
+      <div class="an-section-body" id="an-body-run-prs">
+        <div class="table-card" id="bestEffortsRunCard" style="margin:0;">
+          <div id="bestEffortsRun"><div class="no-db-msg">Loading…</div></div>
+        </div>
+      </div>
     </div>
     <div class="table-card">
       <div class="table-header">
@@ -278,42 +325,89 @@
   <div id="analyticsPage-cycling" class="analytics-page" style="display:none;">
     <div class="stat-strip" id="statStripCyc"></div>
     <div id="lastRideSnapshot"></div>
-    <div class="charts-grid">
-      <div class="chart-card chart-full" id="cyclingLoadCard" style="display:none;">
-        <div class="chart-card-header"><span class="chart-card-title">Cycling training load</span><span class="chart-card-sub">TSS · intensity factor · normalized power · requires local server</span></div>
-        <div class="chart-card-body"><canvas id="cyclingLoadChart"></canvas></div>
+    <!-- ── Section: Pace & Volume ── -->
+    <div class="an-section">
+      <div class="an-section-header" data-action="toggle-section" data-section-key="cyc-pace-volume">
+        <span class="an-section-chevron">▼</span>
+        <span class="an-section-label">Pace &amp; Volume</span>
+        <span class="an-section-count">1 chart</span>
+        <span class="an-section-kpi" id="an-kpi-cyc-pace-volume"></span>
       </div>
-      <div class="chart-card chart-full">
-        <div class="chart-card-header"><span class="chart-card-title">Cycling speed over time</span><span class="chart-card-sub">mph · virtual / road / indoor</span></div>
-        <div class="chart-card-body"><canvas id="cyclingChart"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-card-header"><span class="chart-card-title">Cycling avg power</span><span class="chart-card-sub">watts · road + virtual rides</span></div>
-        <div class="chart-card-body"><canvas id="cyclingPowerChart"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-card-header"><span class="chart-card-title">Power trend</span><span class="chart-card-sub">4-ride rolling avg · avg vs peak power</span></div>
-        <div class="chart-card-body"><canvas id="powerTrendChart"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-card-header"><span class="chart-card-title">Peak power history</span><span class="chart-card-sub">max watts per ride · PR annotated</span></div>
-        <div class="chart-card-body"><canvas id="peakPowerChart"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-card-header"><span class="chart-card-title">Speed vs power</span><span class="chart-card-sub">efficiency scatter · dot size = distance</span></div>
-        <div class="chart-card-body"><canvas id="speedPowerChart"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-card-header"><span class="chart-card-title">HR zone distribution</span><span class="chart-card-sub">% by avg HR zone · max HR 183 bpm</span></div>
-        <div class="chart-card-body" style="padding-bottom:14px;"><canvas id="hrZoneChartCyc" style="max-height:60px;"></canvas></div>
+      <div class="an-section-body" id="an-body-cyc-pace-volume">
+        <div class="charts-grid">
+          <div class="chart-card chart-full">
+            <div class="chart-card-header"><span class="chart-card-title">Cycling speed over time</span><span class="chart-card-sub">mph · virtual / road / indoor</span></div>
+            <div class="chart-card-body"><canvas id="cyclingChart"></canvas></div>
+          </div>
+        </div>
       </div>
     </div>
-    <div class="table-card" id="bestEffortsCycleCard">
-      <div class="table-header">
-        <span class="chart-card-title">Best Efforts</span>
-        <span class="chart-card-sub">all-time PRs · requires local server</span>
+
+    <!-- ── Section: Power ── -->
+    <div class="an-section">
+      <div class="an-section-header" data-action="toggle-section" data-section-key="cyc-power">
+        <span class="an-section-chevron">▼</span>
+        <span class="an-section-label">Power</span>
+        <span class="an-section-count">5 charts</span>
+        <span class="an-section-kpi" id="an-kpi-cyc-power"></span>
       </div>
-      <div id="bestEffortsCycle"><div class="no-db-msg">Loading…</div></div>
+      <div class="an-section-body" id="an-body-cyc-power">
+        <div class="charts-grid">
+          <div class="chart-card chart-full" id="cyclingLoadCard" style="display:none;">
+            <div class="chart-card-header"><span class="chart-card-title">Cycling training load</span><span class="chart-card-sub">TSS · intensity factor · normalized power · requires local server</span></div>
+            <div class="chart-card-body"><canvas id="cyclingLoadChart"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-header"><span class="chart-card-title">Cycling avg power</span><span class="chart-card-sub">watts · road + virtual rides</span></div>
+            <div class="chart-card-body"><canvas id="cyclingPowerChart"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-header"><span class="chart-card-title">Power trend</span><span class="chart-card-sub">4-ride rolling avg · avg vs peak power</span></div>
+            <div class="chart-card-body"><canvas id="powerTrendChart"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-header"><span class="chart-card-title">Peak power history</span><span class="chart-card-sub">max watts per ride · PR annotated</span></div>
+            <div class="chart-card-body"><canvas id="peakPowerChart"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-header"><span class="chart-card-title">Speed vs power</span><span class="chart-card-sub">efficiency scatter · dot size = distance</span></div>
+            <div class="chart-card-body"><canvas id="speedPowerChart"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Section: Cardio ── -->
+    <div class="an-section">
+      <div class="an-section-header" data-action="toggle-section" data-section-key="cyc-cardio">
+        <span class="an-section-chevron">▼</span>
+        <span class="an-section-label">Cardio</span>
+        <span class="an-section-count">1 chart</span>
+        <span class="an-section-kpi" id="an-kpi-cyc-cardio"></span>
+      </div>
+      <div class="an-section-body" id="an-body-cyc-cardio">
+        <div class="charts-grid">
+          <div class="chart-card chart-full">
+            <div class="chart-card-header"><span class="chart-card-title">HR zone distribution</span><span class="chart-card-sub">% by avg HR zone · max HR 183 bpm</span></div>
+            <div class="chart-card-body" style="padding-bottom:14px;"><canvas id="hrZoneChartCyc" style="max-height:60px;"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Section: Personal Records ── -->
+    <div class="an-section">
+      <div class="an-section-header" data-action="toggle-section" data-section-key="cyc-prs">
+        <span class="an-section-chevron">▼</span>
+        <span class="an-section-label">Personal Records</span>
+        <span class="an-section-count">all-time PRs</span>
+        <span class="an-section-kpi" id="an-kpi-cyc-prs"></span>
+      </div>
+      <div class="an-section-body" id="an-body-cyc-prs">
+        <div class="table-card" id="bestEffortsCycleCard" style="margin:0;">
+          <div id="bestEffortsCycle"><div class="no-db-msg">Loading…</div></div>
+        </div>
+      </div>
     </div>
     <div class="table-card">
       <div class="table-header">

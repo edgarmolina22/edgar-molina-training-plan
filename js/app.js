@@ -35,6 +35,8 @@ const CLICK_ACTIONS = {
   'backdrop-act':         (el, e) => { if (e.target === el) closeActModal(); },
   // Garmin sync
   'clear-garmin':         () => clearGarmin(),
+  // Analytics page sections (expand/collapse)
+  'toggle-section':       el => toggleSection(el.dataset.sectionKey, el),
   // Snapshots + race predictor
   'toggle-race-predictor':() => toggleRacePredictor(),
   'toggle-snapshot':      el => toggleSnapshot(el.dataset.snapshot),

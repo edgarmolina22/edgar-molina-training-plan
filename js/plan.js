@@ -43,6 +43,7 @@ const WEEKS = [
   // PHASE 1 — REHAB
   {
     num:1, phase:'rehab', dates:'May 11–17', miles:26, note:'Active IT band rehab week. All runs easy, no hills, no intensity. If any lateral knee pain appears, walk.',
+    optionalCycling:'30–45 min easy road ride (Z1, HR ≤120) if schedule allows. Friday evening or weekend works well — keeps the IT band activation pattern going without taxing the legs. Skip if rest day is what your body wants.',
     hasRace:false,
     days:[
       { name:'Mon', type:'run', title:'Easy run — 4.5 miles', detail:'9:45–10:15/mi, HR ≤143. If any lateral knee pain, stop and walk.', stats:'4.5 mi · HR ≤143' },
@@ -57,6 +58,7 @@ const WEEKS = [
   },
   {
     num:2, phase:'rehab', dates:'May 18–24', miles:25, note:'Second and final rehab week — build mileage gently heading into the half marathon on May 31. No intensity, no hills. All easy.',
+    optionalCycling:'30–45 min easy road ride (Z1, HR ≤120) if schedule allows. Already a built-in Monday + Thursday cycle this week — this would be a third, recreational ride. Skip if you feel taxed before the half.',
     hasRace:false,
     days:[
       { name:'Mon', type:'strength', title:'Strength A + easy bike', detail:'30 min easy cycling. Strength circuit A — increase clamshell resistance if last week felt easy.', stats:'30 min cycling · Strength A' },
@@ -72,6 +74,7 @@ const WEEKS = [
   // PHASE 2 — REBUILD
   {
     num:3, phase:'rebuild', dates:'May 25–31', miles:25, note:'Race week — San Jose Half Marathon on Sunday. Keep all runs easy leading in. Treat the race as a hard training effort, not a peak performance.',
+    optionalCycling:'Skip the optional ride this week — half marathon Sunday. If you must spin, 20–30 min very easy on Wednesday max.',
     hasRace:true, raceName:'Half marathon — San Jose, CA · May 31 · flat course',
     days:[
       { name:'Mon', type:'strength', title:'Strength A + easy bike', detail:'35 min easy cycling Z1. Strength circuit A — keep it light, legs need to stay fresh this week.', stats:'35 min cycling · Strength A' },
@@ -86,6 +89,7 @@ const WEEKS = [
   },
   {
     num:4, phase:'rebuild', dates:'Jun 1–7', miles:29, note:'Recovery and first tempo of the block. Monitor IT band response after the half before introducing quality work.',
+    optionalCycling:'30–45 min easy road ride if recovery feels good post-race. Friday evening or Sunday. Cap at 45 min — first tempo of the block is Wednesday, legs need to be there.',
     hasRace:false,
     days:[
       { name:'Mon', type:'strength', title:'Strength A + easy bike', detail:'40 min easy cycling Z1 — legs will be tired from the race. Strength circuit A, light load. Foam roll IT band thoroughly.', stats:'40 min cycling · Strength A · foam roll' },
@@ -100,6 +104,7 @@ const WEEKS = [
   },
   {
     num:5, phase:'rebuild', dates:'Jun 8–14', miles:34, note:'800m repeats return. Focus on maintaining 175+ spm through all reps — cadence tends to drop under interval effort.',
+    optionalCycling:'30–45 min easy road ride OK if you want it. Friday evening best — gives 36+ hours to Sunday long run. Avoid the day before or after Tuesday’s 800m session.',
     hasRace:false,
     days:[
       { name:'Mon', type:'strength', title:'Strength B + easy bike', detail:'40 min easy cycling. Strength circuit B — step-downs especially important for IT band.', stats:'40 min cycling · Strength B' },
@@ -114,6 +119,7 @@ const WEEKS = [
   },
   {
     num:6, phase:'rebuild', dates:'Jun 15–21', miles:26, note:'Planned recovery week. Volume drops ~25% — this is intentional. Adaptation happens during rest, not just work.',
+    optionalCycling:'Easy recreational ride encouraged this week — recovery weeks are for movement, not couch. 45–60 min flat Z1, anywhere in the week. This is the last "easy add" window before Build phase ramps up.',
     hasRace:false,
     days:[
       { name:'Mon', type:'cycle', title:'Easy cycling — 45 min', detail:'Pure recovery. Z1 only, no efforts. Light legs.', stats:'45 min · Z1' },
@@ -717,6 +723,7 @@ function renderPlan() {
         </div>
         <div class="week-body">
           ${week.hasRace?`<div class="race-banner">★ ${week.raceName}</div>`:''}
+          ${week.optionalCycling?`<div class="optional-banner">🚴 Optional: ${week.optionalCycling}</div>`:''}
           ${week.note?`<div class="week-note">${getDynamicWeekNote(week)}</div>`:''}
           <div class="days-grid">
             ${week.days.map((d,dayIdx)=>{

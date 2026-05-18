@@ -1,7 +1,8 @@
 # Local data — too big or sensitive for git
 training.db
-training.db-journal
 training.db-wal
+training.db-journal
+training.db-shm
 garmin_fit/
 *.bak
 *.backup

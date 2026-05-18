@@ -93,8 +93,11 @@ Hard-reload the browser (Cmd-Shift-R) so the cached JSON files re-fetch.
 
 - 15-week plan May 11 – Aug 23, 2026
 - Full 7-day weekly view with actual calendar dates
-- Completed workouts turn green when matched to Garmin data
+- Completed workouts turn green when matched to Garmin data (today's workout never auto-completes — `<` not `<=` today)
+- The **current week opens by default** when you load the page; past + future weeks stay collapsed
 - Filter by phase: Rehab · Rebuild · Build · Peak · Taper
+- **IT Band Strength Reference card** (top of tab) — one collapsible card with Daily activation + Strength A + Strength B exercises. Each week's day rows reference them by name; the card is the single source of truth so you don't see the same exercises duplicated across 15 weeks.
+- **Optional cycling indicator** (🚴 emoji on the week header bar) — appears on weeks where the plan suggests a flexible extra ride; hover for the full prescription
 - **Plan Health panel** (collapsible) — evaluates most recent week:
   - Mileage: warns if <80% or >115% of planned
   - Pace trend: flags >30s/mi slowdown, celebrates >20s improvement
@@ -118,9 +121,21 @@ Hard-reload the browser (Cmd-Shift-R) so the cached JSON files re-fetch.
 
 **Overview:** Weekly volume, training load (Aerobic TE), HR zones, elevation, recovery balance, race predictor.
 
-**Running:** Pace over time, pace progression, HR vs pace scatter, aerobic efficiency, long run progression, cadence, left GCT balance, GCT, stride length, vertical ratio, vertical oscillation. Running power curve PRs *(requires local server)*.
+**Running** — charts grouped into 4 collapsible sections (state persists per browser):
 
-**Cycling:** Speed over time, avg/peak power, speed vs power scatter, HR zones. TSS/IF/normalized power load chart *(requires local server)*.
+- **Pace & Volume** *(open by default)* — pace over time, pace progression, long run progression
+- **Cardio** *(open)* — HR vs pace, aerobic efficiency trend, running power curve PRs *(requires local server)*
+- **Form** *(collapsed)* — cadence, left GCT balance, GCT, stride length, vertical ratio, vertical oscillation
+- **Personal Records** *(open)* — all-time PRs for 400m through marathon, longest run, biggest climb *(requires local server)*
+
+**Cycling** — same 4-section pattern with cycling-specific groups:
+
+- **Pace & Volume** — cycling speed over time
+- **Power** — cycling training load, avg power, power trend, peak power history, speed vs power scatter
+- **Cardio** — HR zone distribution
+- **Personal Records** — all-time PRs for 5mi/10K/10mi/20K/30K/40K, longest ride, biggest climb, full power curve (1s → 20min)
+
+Each section header shows an at-a-glance KPI summary when collapsed (e.g. "latest 9:32/mi · 8.02 mi · 123 runs").
 
 **Run type filters:** Easy · Long · Intervals · Tempo · Hills · Races
 
@@ -162,11 +177,14 @@ Form Drift tab hidden for cycling activities.
 
 ## Database
 
-### Schema — 11 tables, 9 views, 13 indexes
+### Schema — 12 tables, 9 views, 15 indexes
 
 `activities.garmin_activity_id` is a `UNIQUE INTEGER` populated from the `.fit`
 filename (Garmin exports as `<id>.fit`). It is the cross-system primary key
-used by the JSON files and every DB-backed API endpoint.
+used by the JSON files and every DB-backed API endpoint. `activity_date` and
+`activity_datetime` are stored in **local time** (America/Los_Angeles), not
+UTC, so a Friday-evening ride lands on Friday in the plan view rather than
+Saturday.
 
 | Table | Cols | Contents |
 |-------|------|----------|
@@ -174,6 +192,7 @@ used by the JSON files and every DB-backed API endpoint.
 | `laps` | 44 | Per-mile/lap splits |
 | `records` | 23 | 1Hz GPS/HR/power/form stream |
 | `stream_summary` | 30 | HR zones, power curve, form drift |
+| `best_efforts` | 4 | Per-activity PRs (rolling-window distance times + power PRs + climbs) |
 | `hrv` | 4 | Beat-to-beat RR intervals (cycling) |
 | `events` | 14 | HR alerts, gear shifts, recovery HR, pauses |
 | `workout_steps` | 13 | Structured workout definitions + HR targets |
@@ -212,6 +231,7 @@ populated from the `.fit` filename on every import.
 | `GET /api/route` | GPS points + pace stats |
 | `GET /api/power_curve` | All-time power PRs |
 | `GET /api/cycling_load` | TSS/IF history |
+| `GET /api/best_efforts` | All-time PRs per effort type (running + cycling) |
 | `GET /api/activities` | All activities |
 | `GET /db` | Database previewer |
 
@@ -256,6 +276,8 @@ Max HR 183 bpm:
 ## IT band program
 
 Active left IT band issue (flares Apr 12 and May 3, 2026). **47.5% left GCT balance = risk threshold**, tracked per-lap in the database.
+
+Exercise lists live in `js/plan.js` as three constants (`ITB_DAILY`, `ITB_STRENGTH_A`, `ITB_STRENGTH_B`) and render in the **IT Band Strength Reference** card at the top of the Plan tab.
 
 **Daily activation (~10 min):** Clamshells · Lateral band walks · Single-leg step-downs · Hip 90/90 · IT band foam roll
 

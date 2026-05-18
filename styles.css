@@ -146,6 +146,8 @@ body{font-family:var(--mono);background:var(--bg);color:var(--text);font-size:13
 .race-banner{margin:0 14px 10px;padding:7px 10px;background:var(--race-bg);border-left:3px solid var(--race);border-radius:0 4px 4px 0;font-size:10px;color:var(--race);font-family:var(--mono);}
 .itb-banner{margin:0 14px 10px;padding:7px 10px;background:var(--strength-bg);border-left:3px solid var(--strength);border-radius:0 4px 4px 0;font-size:10px;color:var(--strength);font-family:var(--mono);}
 .optional-banner{margin:0 14px 10px;padding:7px 10px;background:var(--cycle-bg);border-left:3px solid var(--cycle);border-radius:0 4px 4px 0;font-size:10px;color:var(--cycle);font-family:var(--mono);}
+.week-optional{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;font-size:10px;line-height:1;cursor:help;opacity:0.7;transition:opacity 0.12s;}
+.week-optional:hover{opacity:1;}
 .week-note{padding:8px 14px;font-size:10px;color:var(--text2);background:var(--warn-bg);border-top:1px solid #f0dcc8;font-style:italic;}
 
 /* ══════════════════════════════
@@ -514,6 +516,34 @@ body{font-family:var(--mono);background:var(--bg);color:var(--text);font-size:13
   .an-section-header{padding-left:16px;padding-right:16px;}
   .an-section-body{padding-left:16px;padding-right:16px;}
   .an-section-kpi{display:none !important;}
+}
+
+/* ══ Strength reference card ══ */
+.strength-card{background:var(--surface);border-bottom:1px solid var(--border);}
+.strength-card-header{padding:10px 40px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;cursor:pointer;user-select:none;background:var(--surface2);border-top:1px solid var(--border);transition:background 0.12s;}
+.strength-card-header:hover{background:#ebe8e2;}
+.strength-card-header.collapsed{border-bottom:none;}
+.strength-card-header .strength-routine-chev{font-size:9px;color:var(--text);transition:transform 0.18s;flex-shrink:0;width:10px;text-align:center;font-family:var(--mono);}
+.strength-card-header.collapsed .strength-routine-chev{transform:rotate(-90deg);}
+.strength-card-title{font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text);font-weight:500;font-family:var(--mono);}
+.strength-card-sub{font-size:10px;color:var(--text3);font-family:var(--mono);margin-left:auto;}
+.strength-routines{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-top:1px solid var(--border);}
+.strength-routines.collapsed{display:none;}
+.strength-routine{border-right:1px solid var(--border);}
+.strength-routine:last-child{border-right:none;}
+.strength-routine-head{display:flex;align-items:center;gap:8px;padding:8px 14px;background:var(--surface);border-bottom:1px solid var(--border);}
+.strength-routine-label{font-size:10px;letter-spacing:0.08em;text-transform:uppercase;font-weight:500;color:var(--strength);font-family:var(--mono);}
+.strength-routine-meta{margin-left:auto;font-size:9px;color:var(--text3);font-family:var(--mono);}
+.strength-routine-body{padding:8px 14px 12px;}
+.strength-ex{display:flex;gap:7px;align-items:baseline;padding:4px 0;font-size:11px;line-height:1.4;}
+.strength-ex-num{width:14px;height:14px;border-radius:50%;background:var(--strength-bg);border:1px solid #b8d9cc;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--strength);font-weight:500;font-family:var(--mono);transform:translateY(2px);}
+.strength-ex-name{font-weight:500;color:var(--text);font-family:var(--mono);font-size:11px;white-space:nowrap;}
+.strength-ex-detail{color:var(--text3);font-size:10px;font-family:var(--mono);}
+@media(max-width:800px){
+  .strength-card-header{padding-left:16px;padding-right:16px;}
+  .strength-routines{grid-template-columns:1fr;}
+  .strength-routine{border-right:none;border-bottom:1px solid var(--border);}
+  .strength-routine:last-child{border-bottom:none;}
 }
 
 /* ══ Best Efforts card ══ */

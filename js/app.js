@@ -37,6 +37,8 @@ const CLICK_ACTIONS = {
   'clear-garmin':         () => clearGarmin(),
   // Analytics page sections (expand/collapse)
   'toggle-section':       el => toggleSection(el.dataset.sectionKey, el),
+  // Strength reference card routines (Daily / A / B)
+  'toggle-strength':      el => toggleStrengthRoutine(el.dataset.strengthKey, el),
   // Snapshots + race predictor
   'toggle-race-predictor':() => toggleRacePredictor(),
   'toggle-snapshot':      el => toggleSnapshot(el.dataset.snapshot),

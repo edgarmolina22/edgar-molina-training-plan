@@ -820,7 +820,7 @@ function renderProgress() {
   const el = document.getElementById('progressSection');
   if(!el) return;
 
-  const today = new Date().toISOString().slice(0,10);
+  const today = todayLocal();
 
   // Calculate actual miles per phase from Garmin run data
   // Match runs to plan weeks by date
@@ -828,7 +828,7 @@ function renderProgress() {
     let actual = 0;
     phase.weeks.forEach(weekNum => {
       const weekStart = WEEK_START_DATES[weekNum];
-      const weekEnd   = new Date(new Date(weekStart+'T00:00:00').getTime() + 7*86400000).toISOString().slice(0,10);
+      const weekEnd   = addDays(weekStart, 7);
       analyticsRuns.forEach(r => {
         const d = (r.Date||r.date||'').slice(0,10);
         if(d >= weekStart && d < weekEnd) actual += (r.Distance||r.distance||0);
@@ -842,7 +842,7 @@ function renderProgress() {
 
   // Determine current phase
   const currentWeek = Object.entries(WEEK_START_DATES).find(([num, date]) => {
-    const end = new Date(new Date(date+'T00:00:00').getTime() + 7*86400000).toISOString().slice(0,10);
+    const end = addDays(date, 7);
     return today >= date && today < end;
   });
   const currentWeekNum = currentWeek ? parseInt(currentWeek[0]) : 0;
@@ -901,7 +901,9 @@ let BUILTIN_RUNS = [];
 let BUILTIN_CYCLES = [];
 
 function applyFilters(){
-  const now = new Date('2026-05-11');
+  // "Last N days" measured from real now (was hardcoded to 2026-05-11
+  // during the rehab block — that anchor would drift further off over time).
+  const now = new Date();
   const inRange = r => {
     if(activeRangeFilter==='all') return true;
     const days=parseInt(activeRangeFilter);

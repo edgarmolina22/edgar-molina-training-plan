@@ -262,6 +262,21 @@ const WEEKS = [
     strength:{ title:'No strength this week — full rest for legs', exercises:[] },
   },
 ];
+// ── Local-date helpers ────────────────────────────────────────────────
+// Using toISOString().slice(0,10) gives the UTC calendar date, which means
+// late-evening Pacific users (after 5 PM PDT) see "tomorrow" in the hub.
+// These helpers always return the LOCAL calendar date as 'YYYY-MM-DD'.
+function todayLocal() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function addDays(dateStr, days) {
+  // Parse at noon to immunize against DST shifts on the day boundary.
+  const d = new Date(dateStr + 'T12:00:00');
+  d.setDate(d.getDate() + days);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
 const WEEK_START_DATES = {
   1:'2026-05-11',2:'2026-05-18',3:'2026-05-25',4:'2026-06-01',
   5:'2026-06-08',6:'2026-06-15',7:'2026-06-22',8:'2026-06-29',
@@ -401,9 +416,13 @@ function getForDate(dateStr, typeMatch) {
 }
 
 function isCompleted(dateStr, dayType) {
-  const today = new Date().toISOString().slice(0,10);
+  const today = todayLocal();
   if(dateStr > today) return false;
-  if(dayType==='rest') return dateStr <= today;
+  // For rest + strength we can't detect completion from activity data, so we
+  // fall back to "is this day in the past?". Strict `<` here — TODAY isn't
+  // marked complete until the day actually ends (you might still do the
+  // session tonight, or skip the rest day with an evening run).
+  if(dayType==='rest') return dateStr < today;
 
   const runs   = getForDate(dateStr, 'run');
   const cycles = analyticsCycles.filter(a => {
@@ -414,7 +433,7 @@ function isCompleted(dateStr, dayType) {
 
   if(dayType==='run' || dayType==='run+strength' || dayType==='race') return runs.length > 0;
   if(dayType==='cycle') return cycles.length > 0;
-  if(dayType==='strength') return dateStr <= today; // can't auto-detect strength, mark past days done
+  if(dayType==='strength') return dateStr < today; // same as rest — only past days
   return runs.length > 0 || cycles.length > 0;
 }
 
@@ -487,12 +506,12 @@ function splitWorkouts(d, weekStrength) {
 // DYNAMIC HEADER — pace, finish, week
 // ════════════════════════════════════════
 function updateDynamicHeader() {
-  const today = new Date().toISOString().slice(0,10);
+  const today = todayLocal();
 
   // Current week & phase
   let currentWeekNum = 0;
   Object.entries(WEEK_START_DATES).forEach(([num, date]) => {
-    const end = new Date(new Date(date+'T00:00:00').getTime()+7*86400000).toISOString().slice(0,10);
+    const end = addDays(date, 7);
     if(today >= date && today < end) currentWeekNum = parseInt(num);
   });
   const currentPhase = PHASE_CONFIG.find(p=>p.weeks.includes(currentWeekNum));
@@ -507,9 +526,9 @@ function updateDynamicHeader() {
 // DYNAMIC WEEK NOTES — IT band aware
 // ════════════════════════════════════════
 function getDynamicWeekNote(week) {
-  const today = new Date().toISOString().slice(0,10);
+  const today = todayLocal();
   const weekStart = WEEK_START_DATES[week.num];
-  const weekEnd = new Date(new Date(weekStart+'T00:00:00').getTime()+7*86400000).toISOString().slice(0,10);
+  const weekEnd = addDays(weekStart, 7);
   const isCurrentWeek = today >= weekStart && today < weekEnd;
   const isPastWeek = weekEnd <= today;
 
@@ -558,7 +577,7 @@ function renderPlanHealth() {
   const el = document.getElementById('planHealth');
   if(!el) return;
 
-  const today = new Date().toISOString().slice(0,10);
+  const today = todayLocal();
   const flags = [];
 
   // ── Gather per-week stats for completed + current in-progress weeks ──
@@ -568,7 +587,7 @@ function renderPlanHealth() {
     // Skip future weeks (haven't started yet)
     if(startStr > today) break;
 
-    const endStr = new Date(new Date(startStr+'T00:00:00').getTime()+7*86400000).toISOString().slice(0,10);
+    const endStr = addDays(startStr, 7);
     const isComplete = endStr <= today;
 
     const wkRuns = analyticsRuns.filter(r=>{
@@ -683,8 +702,68 @@ function renderPlanHealth() {
   </div>`;
 }
 
+// ════════════════════════════════════════
+// STRENGTH REFERENCE CARD
+// ════════════════════════════════════════
+// One global card at the top of the Plan tab showing all three IT-band
+// routines. Replaces the per-week strength sections that used to repeat the
+// same exercise lists 15 times. Day rows still call out "Strength A/B" — this
+// card is where the exercises themselves live.
+function renderStrengthCard() {
+  const host = document.getElementById('strengthReference');
+  if (!host) return;
+
+  const routines = [
+    { label:'Daily activation', meta:'every day · ~10 min', exercises: ITB_DAILY },
+    { label:'Strength A',       meta:'Mon',                  exercises: ITB_STRENGTH_A },
+    { label:'Strength B',       meta:'Wed',                  exercises: ITB_STRENGTH_B },
+  ];
+
+  const exHTML = ex => ex.map((e, i) => `
+    <div class="strength-ex">
+      <div class="strength-ex-num">${i+1}</div>
+      <div><span class="strength-ex-name">${e.name}</span> <span class="strength-ex-detail">${e.detail}</span></div>
+    </div>`).join('');
+
+  // Single open/closed state for the whole card.
+  let saved = null;
+  try { saved = localStorage.getItem('emt:strength:all'); } catch {}
+  const open = saved === '0' ? false : true;   // default open
+
+  host.innerHTML = `
+    <div class="strength-card">
+      <div class="strength-card-header ${open ? '' : 'collapsed'}" data-action="toggle-strength">
+        <span class="strength-routine-chev">▼</span>
+        <span class="strength-card-title">IT Band Strength Reference</span>
+        <span class="strength-card-sub">Daily activation every day · Circuits A &amp; B alternate by week</span>
+      </div>
+      <div class="strength-routines ${open ? '' : 'collapsed'}" id="strength-body">
+        ${routines.map(r => `
+          <div class="strength-routine">
+            <div class="strength-routine-head" style="cursor:default">
+              <span class="strength-routine-label">${r.label}</span>
+              <span class="strength-routine-meta">${r.exercises.length} ex · ${r.meta}</span>
+            </div>
+            <div class="strength-routine-body">
+              ${exHTML(r.exercises)}
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+function toggleStrengthRoutine(_key, headerEl) {
+  const body = document.getElementById('strength-body');
+  if (!body || !headerEl) return;
+  const willCollapse = !headerEl.classList.contains('collapsed');
+  headerEl.classList.toggle('collapsed', willCollapse);
+  body.classList.toggle('collapsed', willCollapse);
+  try { localStorage.setItem('emt:strength:all', willCollapse ? '0' : '1'); } catch {}
+}
+
 function renderPlan() {
   renderPlanHealth();
+  renderStrengthCard();
   const main=document.getElementById('planMain');
   main.innerHTML='';
   PHASES.forEach(phase=>{
@@ -712,18 +791,23 @@ function renderPlan() {
       },[]);
       const badgeHtml=badges.map(t=>{const c=typeColors[t]||typeColors.rest;return`<span class="badge" style="background:${c.bg};color:${c.color}">${c.label}</span>`;}).join('');
       const showRaceBadge=week.hasRace&&!badges.includes('race');
+      // Inline optional-cycling indicator on the week header — full text in the
+      // tooltip. Replaces the old full-width banner that used to sit inside the
+      // week body and ate a lot of vertical space.
+      const optEmoji = week.optionalCycling
+        ? `<span class="week-optional" title="Optional this week: ${week.optionalCycling.replace(/"/g,'&quot;')}">🚴</span>`
+        : '';
       wBlock.innerHTML=`
         <div class="week-header" data-action="toggle-week">
           <span class="week-num">WK ${week.num}</span>
           <span class="week-dates">${week.dates}</span>
-          <div class="week-badges">${badgeHtml}${showRaceBadge?`<span class="badge" style="background:var(--race-bg);color:var(--race)">Race</span>`:''}</div>
+          <div class="week-badges">${badgeHtml}${showRaceBadge?`<span class="badge" style="background:var(--race-bg);color:var(--race)">Race</span>`:''}${optEmoji}</div>
           <span class="week-miles">${week.miles} mi</span>
           <div class="week-bar-wrap"><div class="week-bar" style="width:${barPct}%;background:${phaseColors[week.phase]}"></div></div>
           <span class="chevron">▼</span>
         </div>
         <div class="week-body">
           ${week.hasRace?`<div class="race-banner">★ ${week.raceName}</div>`:''}
-          ${week.optionalCycling?`<div class="optional-banner">🚴 Optional: ${week.optionalCycling}</div>`:''}
           ${week.note?`<div class="week-note">${getDynamicWeekNote(week)}</div>`:''}
           <div class="days-grid">
             ${week.days.map((d,dayIdx)=>{
@@ -755,64 +839,37 @@ function renderPlan() {
               </div>`;
             }).join('')}
           </div>
-          ${week.strength&&week.strength.exercises.length>0?`
-          <div class="strength-section">
-            ${(()=>{
-              const s = week.strength;
-              const t = s.title;
-
-              const renderExercises = (exercises, label, sublabel) => `
-                <div class="circuit-block">
-                  <div class="circuit-label">${label}${sublabel?`<span class="circuit-sublabel">${sublabel}</span>`:''}</div>
-                  <div class="ex-grid">
-                    ${exercises.map((e,i)=>`
-                      <div class="ex-item">
-                        <div class="ex-bullet">${i+1}</div>
-                        <div><strong style="font-weight:500">${e.name}</strong><br><span style="color:var(--text3)">${e.detail}</span></div>
-                      </div>`).join('')}
-                  </div>
-                </div>`;
-
-              // Dual-circuit weeks: have explicit exercisesB
-              if(s.exercisesB) {
-                return `<div class="strength-title">${t}</div>` +
-                  renderExercises(s.exercises,  s.labelA||'Circuit A', s.sublabelA||'') +
-                  renderExercises(s.exercisesB, s.labelB||'Circuit B', s.sublabelB||'');
-              }
-              // Daily activation
-              if(t.toLowerCase().includes('daily') || s.exercises === ITB_DAILY) {
-                return `<div class="strength-title">${t}</div>` +
-                  renderExercises(s.exercises, 'Daily activation', '~10 min · every day');
-              }
-              // Single circuit — detect A vs B from title
-              const label = t.toLowerCase().includes('circuit b') || (t.toLowerCase().includes('strength b') && !t.toLowerCase().includes('strength a')) ? 'Circuit B' : 'Circuit A';
-              return `<div class="strength-title">${t}</div>` +
-                renderExercises(s.exercises, label, '');
-            })()}
-          </div>`:''}
+          ${week.strength?`<div class="week-note" style="background:transparent;border-top:1px solid var(--border);color:var(--text3);font-style:normal;">Strength this week: <strong style="color:var(--strength);font-weight:500">${week.strength.title}</strong></div>`:''}
         </div>`;
       block.appendChild(wBlock);
     });
     main.appendChild(block);
   });
-  // Open first week
-  const first=document.querySelector('#planMain .week-header');
-  if(first){first.classList.add('open');first.nextElementSibling.classList.add('open');}
+  // Open the CURRENT week by default (was: always W1). Past + future weeks
+  // stay collapsed; user can expand any of them manually. If today is past the
+  // race (curWeek = 0), fall back to opening the first week.
+  const today = todayLocal();
+  let curWeek = 0;
+  Object.entries(WEEK_START_DATES).forEach(([num, date]) => {
+    const end = addDays(date, 7);
+    if (today >= date && today < end) curWeek = parseInt(num);
+  });
+  const openTarget = curWeek > 0
+    ? document.querySelector(`#planMain [data-week="${curWeek}"] .week-header`)
+    : document.querySelector('#planMain .week-header');
+  if (openTarget) {
+    openTarget.classList.add('open');
+    openTarget.nextElementSibling.classList.add('open');
+  }
   renderProgress();
   updateDynamicHeader();
   // Scroll to current week after a short delay (allow DOM paint)
-  if(!renderPlan._scrolled){
-    renderPlan._scrolled=true;
-    setTimeout(()=>{
-      const today=new Date().toISOString().slice(0,10);
-      let curWeek=0;
-      Object.entries(WEEK_START_DATES).forEach(([num,date])=>{
-        const end=new Date(new Date(date+'T00:00:00').getTime()+7*86400000).toISOString().slice(0,10);
-        if(today>=date&&today<end)curWeek=parseInt(num);
-      });
-      const target=document.querySelector(`[data-week="${curWeek}"]`);
-      if(target) target.scrollIntoView({behavior:'smooth',block:'start'});
-    },400);
+  if (!renderPlan._scrolled) {
+    renderPlan._scrolled = true;
+    setTimeout(() => {
+      const target = document.querySelector(`[data-week="${curWeek}"]`);
+      if (target) target.scrollIntoView({ behavior:'smooth', block:'start' });
+    }, 400);
   }
 }
 
